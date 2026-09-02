@@ -1,0 +1,23 @@
+{
+  "skill_name": "academic-report-pptx",
+  "cases": [
+    {"id": "p1", "query": "参考学校给的答辩模板，把我的论文和实验图做成可编辑 PPTX，并逐页检查。", "should_trigger": true},
+    {"id": "p2", "query": "把这两篇论文做成 12 分钟中文文献汇报，风格克制一些，最终要 PowerPoint 可编辑。", "should_trigger": true},
+    {"id": "p3", "query": "沿用这个实验室 PPT 模板，把阶段结果扩成组会汇报。", "should_trigger": true},
+    {"id": "p4", "query": "把现有学术 PPT 的 AI 味去掉，但保留学校模板、图表和可编辑对象。", "should_trigger": true},
+    {"id": "p5", "query": "为 15 分钟会议报告制作一套基于论文事实的 PPTX，先让我确认大纲和口头文稿，再进行分页。", "should_trigger": true},
+    {"id": "p6", "query": "用这份开题模板和研究计划生成开题汇报 PPT。", "should_trigger": true},
+    {"id": "p7", "query": "做一套 journal club slides，引用真实论文图，不能整页图片。", "should_trigger": true},
+    {"id": "p8", "query": "检查这个答辩 PPTX 是否还有旧模板文字，并修好后交付。", "should_trigger": true},
+    {"id": "p9", "query": "把我的研究进展和数据图组织成正式学术汇报，优先照这个模板延伸。", "should_trigger": true},
+    {"id": "n1", "query": "整理这篇 PDF 的高亮和批注，输出阅读笔记，不要 PPT。", "should_trigger": false},
+    {"id": "n2", "query": "总结这篇论文的核心观点，直接在聊天里回答。", "should_trigger": false},
+    {"id": "n3", "query": "给 SaaS 产品做融资路演 PPT。", "should_trigger": false},
+    {"id": "n4", "query": "生成四张整页图片式幻灯片，不需要可编辑。", "should_trigger": false},
+    {"id": "n5", "query": "只评价一下这张学术 PPT 截图的配色，不要修改文件。", "should_trigger": false},
+    {"id": "n6", "query": "为本科课程制作一学期 40 讲教学课件。", "should_trigger": false},
+    {"id": "n7", "query": "把这段演讲稿润色得更口语化。", "should_trigger": false},
+    {"id": "n8", "query": "生成论文配图和摘要图。", "should_trigger": false},
+    {"id": "n9", "query": "帮我找一个好看的 PowerPoint 模板网站。", "should_trigger": false}
+  ]
+}

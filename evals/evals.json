@@ -1,0 +1,46 @@
+{
+  "skill_name": "academic-report-pptx",
+  "evals": [
+    {
+      "id": 1,
+      "name": "template-first-defense",
+      "prompt": "我提供学校答辩模板、论文、实验图和 15 分钟要求。请延伸模板制作正式克制、事实可核对、对象级可编辑的中文答辩 PPTX。",
+      "expected_output": "先建立证据台账并让用户确认内容大纲，再让用户确认口头汇报文稿；随后形成页面脚本、审计并延伸模板页面家族，生成可编辑 PPTX，最后完成流程覆盖、全页渲染、对象卫生和模板残留检查。",
+      "files": [],
+      "expectations": [
+        "内容大纲和口头汇报文稿分别经过用户确认",
+        "核心讲述单元全部映射到页面且没有越过文稿增加学术判断",
+        "用户模板优先且存在 template profile 与 layout mapping",
+        "主张和图表可追溯，不生成科学事实",
+        "普通文字、形状和表格保持原生可编辑",
+        "最终运行对象级残留审计和全页视觉检查"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "no-template-journal-club",
+      "prompt": "没有模板。把这篇论文做成 12 分钟 journal club PPTX，风格务实克制，真实论文图要清楚，最后能编辑。",
+      "expected_output": "先确认大纲和口头汇报文稿，再按讲述单元、时长与证据链决定页面；采用克制科学默认视觉系统，使用真实论文图与来源，交付可编辑 PPTX 和 QA 报告。",
+      "files": [],
+      "expectations": [
+        "没有因为缺少模板而套用营销式风格",
+        "文稿以可映射的讲述单元组织而不是预先按页硬切",
+        "页数由讲述时间、证据链和页面节奏决定而非固定模板",
+        "图表裁切保留坐标、图例、面板和来源",
+        "没有把整页位图冒充可编辑 PPTX"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "boundary-annotation-notes",
+      "prompt": "请整理这篇 PDF 的高亮和批注，做成一份阅读笔记，不需要 PPT。",
+      "expected_output": "不触发 academic-report-pptx；转用论文阅读或笔记整理能力。",
+      "files": [],
+      "expectations": [
+        "不把批注整理扩张为 PPT 制作",
+        "不创建 report-spec 或 PPTX",
+        "明确该请求不属于本 Skill"
+      ]
+    }
+  ]
+}
