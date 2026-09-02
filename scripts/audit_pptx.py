@@ -9,6 +9,7 @@ contributors). See references/THIRD_PARTY_NOTICES.md.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -289,6 +290,8 @@ def audit_pptx(path: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": "failed" if errors else "passed",
         "pptx": str(path.resolve()),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "file_size_bytes": path.stat().st_size,
         "slide_count": len(slides),
         "errors": errors,
         "warnings": warnings,

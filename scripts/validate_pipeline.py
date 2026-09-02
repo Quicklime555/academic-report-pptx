@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate evidence → outline → manuscript beats → slide mappings."""
+"""Validate evidence → outline → manuscript → slides → delivery mappings."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from typing import Any
 
 ID_PATTERNS = {
     "evidence": re.compile(r"^E\d{3,}$"),
+    "assets": re.compile(r"^A\d{3,}$"),
     "outline": re.compile(r"^O\d{2,}$"),
     "beats": re.compile(r"^B\d{3,}$"),
     "slides": re.compile(r"^S\d{3,}$"),
@@ -20,6 +21,16 @@ ID_PATTERNS = {
 BEAT_TYPES = {"content", "opening", "transition", "closing"}
 PRIORITIES = {"core", "support", "optional", "backup"}
 NON_CONTENT_ROLES = {"cover", "agenda", "section", "references", "closing"}
+ASSET_GEOMETRIES = {
+    "wide", "tall", "square", "dense-multi-panel", "photo", "microscopy",
+    "chart", "table", "diagram", "map", "screenshot", "other",
+}
+ASSET_HANDLING = {
+    "preserve", "overview-detail", "split", "cross-slide", "redraw-editable",
+    "not-use", "request-higher-resolution",
+}
+TEMPLATE_ADHERENCE = {"strict", "guided", "none"}
+REVIEW_STATUS = {"not-required", "pending", "approved"}
 
 
 def problem(code: str, message: str, **extra: Any) -> dict[str, Any]:
@@ -83,6 +94,16 @@ def collect_items(
     return items, by_id
 
 
+def collect_optional_items(
+    data: dict[str, Any],
+    field: str,
+    errors: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    if field not in data:
+        return [], {}
+    return collect_items(data, field, errors)
+
+
 def check_refs(
     raw_refs: Any,
     known: set[str],
@@ -123,8 +144,8 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
     warnings: list[dict[str, Any]] = []
     budget = speaking_budget(data, errors)
 
-    if data.get("version") != 2:
-        errors.append(problem("version", "version must be 2."))
+    if data.get("version") != 3:
+        errors.append(problem("version", "version must be 3."))
     for field in ("scenario", "stance", "language"):
         require_text(data, field, errors, "root")
 
@@ -152,10 +173,23 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
     if budget and outline_seconds > budget:
         errors.append(problem("outline_overrun", f"Outline budgets {outline_seconds:.0f}s but only {budget:.0f}s are available."))
 
+    assets, assets_by_id = collect_optional_items(data, "assets", errors)
+    asset_ids = set(assets_by_id)
+    for item in assets:
+        owner = item["id"]
+        require_text(item, "source", errors, owner)
+        geometry = item.get("geometry")
+        if geometry not in ASSET_GEOMETRIES:
+            errors.append(problem("asset_geometry", f"{owner}.geometry must be one of {sorted(ASSET_GEOMETRIES)}."))
+        handling = item.get("handling")
+        if handling not in ASSET_HANDLING:
+            errors.append(problem("asset_handling", f"{owner}.handling must be one of {sorted(ASSET_HANDLING)}."))
+        check_refs(item.get("evidence_refs", []), evidence_ids, "evidence_refs", owner, errors)
+
     beats: list[dict[str, Any]] = []
     beats_by_id: dict[str, dict[str, Any]] = {}
     beat_seconds = 0.0
-    if stage in {"manuscript", "slides"}:
+    if stage in {"manuscript", "slides", "delivery"}:
         beats, beats_by_id = collect_items(data, "beats", errors)
         if not beats:
             errors.append(problem("beats_empty", "At least one manuscript beat is required."))
@@ -187,8 +221,10 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
 
     slides: list[dict[str, Any]] = []
     core_coverage = 0.0
-    if stage == "slides":
-        slides, _ = collect_items(data, "slides", errors)
+    slide_seconds = 0.0
+    rehearsal_ready = 0
+    if stage in {"slides", "delivery"}:
+        slides, slides_by_id = collect_items(data, "slides", errors)
         expected_count = data.get("expected_slide_count")
         if not isinstance(expected_count, int) or expected_count <= 0:
             errors.append(problem("expected_slide_count", "expected_slide_count must be a positive integer."))
@@ -208,14 +244,23 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
             role = require_text(item, "role", errors, owner)
             require_text(item, "title", errors, owner)
             require_text(item, "template_layout", errors, owner)
-            require_seconds(item, errors, owner)
+            require_text(item, "layout_rationale", errors, owner)
+            require_text(item, "layout_risk", errors, owner)
+            slide_seconds += require_seconds(item, errors, owner)
+            if stage == "delivery":
+                if require_text(item, "speaker_notes", errors, owner):
+                    rehearsal_ready += 1
             section_id = item.get("section_id")
             if section_id is not None and section_id not in outline_ids:
                 errors.append(problem("slide_section", f"{owner}.section_id references missing id {section_id!r}."))
             beat_refs = check_refs(item.get("beat_refs", []), beat_ids, "beat_refs", owner, errors)
             evidence_refs = check_refs(item.get("evidence_refs", []), evidence_ids, "evidence_refs", owner, errors)
+            asset_refs = check_refs(item.get("asset_refs", []), asset_ids, "asset_refs", owner, errors)
             if role not in NON_CONTENT_ROLES and not beat_refs:
                 errors.append(problem("unmapped_slide", f"Academic content slide {owner} has no manuscript beat."))
+            if role not in NON_CONTENT_ROLES and asset_refs:
+                require_text(item, "exhibit_purpose", errors, owner)
+                require_text(item, "key_finding", errors, owner)
             covered_beats.update(beat_refs)
             required_evidence: set[str] = set()
             for beat_id in beat_refs:
@@ -225,6 +270,20 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
             missing_evidence = required_evidence - set(evidence_refs)
             if missing_evidence:
                 errors.append(problem("slide_evidence_gap", f"{owner} omits beat evidence: {', '.join(sorted(missing_evidence))}."))
+            asset_evidence: set[str] = set()
+            for asset_id in asset_refs:
+                asset = assets_by_id.get(asset_id)
+                if not asset:
+                    continue
+                handling = asset.get("handling")
+                if handling == "not-use":
+                    errors.append(problem("asset_marked_unused", f"{owner} uses {asset_id}, which is marked not-use."))
+                if stage == "delivery" and handling == "request-higher-resolution":
+                    errors.append(problem("unresolved_asset_quality", f"{owner} uses {asset_id}, which still requires a higher-resolution source."))
+                asset_evidence.update(str(ref) for ref in asset.get("evidence_refs", []))
+            missing_asset_evidence = asset_evidence - set(evidence_refs)
+            if missing_asset_evidence:
+                errors.append(problem("asset_evidence_gap", f"{owner} omits asset evidence: {', '.join(sorted(missing_asset_evidence))}."))
 
         if len(numbers) != len(set(numbers)):
             errors.append(problem("duplicate_slide_number", "Slide numbers must be unique."))
@@ -242,6 +301,58 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
         if optional_uncovered:
             warnings.append(problem("noncore_uncovered", f"Non-core beats omitted from slides: {', '.join(sorted(optional_uncovered))}."))
 
+        template = data.get("template")
+        if not isinstance(template, dict):
+            errors.append(problem("template_missing", "template must be an object for slide planning."))
+        else:
+            provided = template.get("provided")
+            if not isinstance(provided, bool):
+                errors.append(problem("template_provided", "template.provided must be boolean."))
+            adherence = template.get("adherence")
+            if adherence not in TEMPLATE_ADHERENCE:
+                errors.append(problem("template_adherence", f"template.adherence must be one of {sorted(TEMPLATE_ADHERENCE)}."))
+            if provided is True:
+                require_text(template, "source", errors, "template")
+                if adherence == "none":
+                    errors.append(problem("template_adherence", "A provided template cannot use adherence=none."))
+                profile = template.get("profile")
+                if not isinstance(profile, dict):
+                    errors.append(problem("template_profile", "template.profile must be an object when a template is provided."))
+                else:
+                    for field in ("canvas", "safe_margins", "theme_fonts", "colors", "navigation_footer"):
+                        require_text(profile, field, errors, "template.profile")
+                    families = profile.get("page_families")
+                    if not isinstance(families, list) or not families or not all(isinstance(x, str) and x.strip() for x in families):
+                        errors.append(problem("template_families", "template.profile.page_families must contain at least one name."))
+                    if not isinstance(profile.get("risks"), list):
+                        errors.append(problem("template_risks", "template.profile.risks must be an array."))
+            elif provided is False and adherence != "none":
+                errors.append(problem("template_adherence", "A missing template must use adherence=none."))
+
+            review = template.get("representative_review")
+            if not isinstance(review, dict):
+                errors.append(problem("representative_review", "template.representative_review must be an object."))
+            else:
+                required = review.get("required")
+                status = review.get("status")
+                if not isinstance(required, bool):
+                    errors.append(problem("representative_required", "representative_review.required must be boolean."))
+                if status not in REVIEW_STATUS:
+                    errors.append(problem("representative_status", f"representative_review.status must be one of {sorted(REVIEW_STATUS)}."))
+                refs = check_refs(review.get("slide_refs", []), set(slides_by_id), "slide_refs", "representative_review", errors)
+                if required and not refs:
+                    errors.append(problem("representative_slides", "A required representative review must name at least one planned slide."))
+                if required and status != "approved":
+                    item = problem("representative_review_pending", "Representative slides must be approved before full-deck delivery.")
+                    (errors if stage == "delivery" else warnings).append(item)
+                if required is False and status != "not-required":
+                    errors.append(problem("representative_status", "A non-required representative review must use status=not-required."))
+
+        if budget and slide_seconds > budget:
+            errors.append(problem("slide_overrun", f"Slide rehearsal budgets {slide_seconds:.0f}s but only {budget:.0f}s are available."))
+        if beat_seconds and abs(slide_seconds - beat_seconds) > max(30.0, beat_seconds * 0.2):
+            warnings.append(problem("manuscript_slide_time_drift", f"Slide timing differs from manuscript timing by {abs(slide_seconds - beat_seconds):.0f}s."))
+
     return {
         "status": "failed" if errors else "passed",
         "stage": stage,
@@ -251,11 +362,14 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
             "speaking_budget_seconds": budget,
             "outline_seconds": outline_seconds,
             "manuscript_seconds": beat_seconds,
+            "slide_seconds": slide_seconds,
             "evidence_items": len(evidence),
+            "assets": len(assets),
             "outline_sections": len(outline),
             "beats": len(beats),
             "slides": len(slides),
             "core_beat_coverage_percent": core_coverage,
+            "rehearsal_ready_percent": 0.0 if not slides else 100.0 * rehearsal_ready / len(slides),
         },
     }
 
@@ -263,7 +377,7 @@ def validate_pipeline(data: dict[str, Any], stage: str) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the academic report production pipeline.")
     parser.add_argument("spec", help="Path to report-spec.json")
-    parser.add_argument("--stage", choices=("outline", "manuscript", "slides"), required=True)
+    parser.add_argument("--stage", choices=("outline", "manuscript", "slides", "delivery"), required=True)
     parser.add_argument("--strict", action="store_true", help="Return non-zero when errors exist")
     parser.add_argument("--json-output", help="Write the complete report to this path")
     args = parser.parse_args()
@@ -280,7 +394,8 @@ def main() -> int:
     metrics = result["metrics"]
     print(
         f"status={result['status']} stage={args.stage} errors={len(result['errors'])} "
-        f"warnings={len(result['warnings'])} core_coverage={metrics['core_beat_coverage_percent']:.0f}%"
+        f"warnings={len(result['warnings'])} core_coverage={metrics['core_beat_coverage_percent']:.0f}% "
+        f"rehearsal_ready={metrics['rehearsal_ready_percent']:.0f}%"
     )
     for item in result["errors"]:
         print(f"ERROR {item['code']}: {item['message']}")

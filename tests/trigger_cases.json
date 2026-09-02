@@ -9,7 +9,7 @@
     {"id": "p6", "query": "用这份开题模板和研究计划生成开题汇报 PPT。", "should_trigger": true},
     {"id": "p7", "query": "做一套 journal club slides，引用真实论文图，不能整页图片。", "should_trigger": true},
     {"id": "p8", "query": "检查这个答辩 PPTX 是否还有旧模板文字，并修好后交付。", "should_trigger": true},
-    {"id": "p9", "query": "把我的研究进展和数据图组织成正式学术汇报，优先照这个模板延伸。", "should_trigger": true},
+    {"id": "p9", "query": "把我的研究进展和数据图组织成正式学术汇报，优先照这个模板延伸，同时交付可编辑 PPTX 和与最终页面对应的排练稿。", "should_trigger": true},
     {"id": "n1", "query": "整理这篇 PDF 的高亮和批注，输出阅读笔记，不要 PPT。", "should_trigger": false},
     {"id": "n2", "query": "总结这篇论文的核心观点，直接在聊天里回答。", "should_trigger": false},
     {"id": "n3", "query": "给 SaaS 产品做融资路演 PPT。", "should_trigger": false},
