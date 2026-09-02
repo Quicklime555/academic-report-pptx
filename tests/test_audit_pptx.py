@@ -69,6 +69,8 @@ class AuditPptxTests(unittest.TestCase):
             )
             result = audit_pptx.audit_pptx(path, manifest)
         self.assertEqual(result["status"], "passed", result["errors"])
+        self.assertEqual(64, len(result["sha256"]))
+        self.assertGreater(result["file_size_bytes"], 0)
 
     def test_hidden_residue_and_structure_fail(self) -> None:
         layout = f'''<p:sldLayout xmlns:a="{audit_pptx.A_NS}" xmlns:p="{audit_pptx.P_NS}">

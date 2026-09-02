@@ -15,6 +15,7 @@
 - 立场、人称和场合一致；
 - 已确认大纲、讲述单元与页面使用稳定 ID；
 - 所有核心讲述单元有页面去向，页面引用的证据覆盖对应讲述单元；
+- 每页排练文稿与最终页面、讲述单元和时间预算一致；
 - PPTX 没有增加文稿和证据之外的新学术判断；
 - 标题与证据匹配，结构标题和结论标题各得其所；
 - 一页一个主要认知任务；
@@ -26,9 +27,11 @@
 ## 模板检查
 
 - template profile 与 layout mapping 已建立；
+- 模板继承等级明确；需要代表页确认时，其状态已批准；
 - 字体、颜色、边距、导航、页脚、图表语法与模板一致；
 - 特殊布局没有被机械重复；
 - 新增布局仍使用同一网格和视觉语法；
+- 每个关键素材已记录几何形态和处理方式，核心素材不存在未解决的高清版本请求；
 - 所有旧内容、旧关系、备注和元数据已替换或明确保留。
 
 ## 视觉检查
@@ -42,7 +45,7 @@
 先运行内容链路检查：
 
 ```text
-python scripts/validate_pipeline.py report-spec.json --stage slides --strict --json-output pipeline-audit.json
+python scripts/validate_pipeline.py report-spec.json --stage delivery --strict --json-output pipeline-audit.json
 ```
 
 再运行 PPTX 对象检查：
@@ -51,8 +54,8 @@ python scripts/validate_pipeline.py report-spec.json --stage slides --strict --j
 python scripts/audit_pptx.py final.pptx --manifest report-spec.json --strict --json-output pptx-audit.json
 ```
 
-脚本负责可确定检查：全部可提取文本、中文/英文占位词、用户指定禁词、封面必填值、导航文本、结束页结构、备注/母版残留和完全越界的文字形状。脚本通过后仍需人工检查渲染图和对象可选择性。
+流程脚本还检查逐页讲稿、代表页状态、素材引用与处理风险。PPTX 审计脚本负责全部可提取文本、中文/英文占位词、用户指定禁词、封面必填值、导航文本、结束页结构、备注/母版残留和完全越界的文字形状，并记录最终文件 SHA-256 与大小，确保 QA 对应实际交付版本。脚本通过后仍需人工检查渲染图和对象可选择性。
 
 ## 交付报告
 
-`qa-report.md` 至少说明：事实核对范围、模板继承方式、视觉检查范围、对象审计结果、哪些科学图仍是图片、字体替换、未验证内容与最终文件路径。任何必要检查未完成时，不使用“最终验收通过”。
+`qa-report.md` 至少说明：事实核对范围、模板继承方式、代表页确认、视觉检查范围、对象审计结果、哪些科学图仍是图片、字体替换、最终文件路径、SHA-256 与未验证内容。任何必要检查未完成时，不使用“最终验收通过”。

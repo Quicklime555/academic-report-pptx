@@ -1,10 +1,11 @@
 # 大纲—文稿—页面契约
 
-`report-spec.json` 是事实、讲述和页面之间的私有结构化合同。可读的 `content-outline.md`、`talk-manuscript.md` 和 `slide-plan.md` 由脚本从它生成，避免三份文档各自漂移。
+`report-spec.json` 是事实、讲述、素材、模板和页面之间的私有结构化合同。可读的 `content-outline.md`、`talk-manuscript.md`、`slide-plan.md` 和 `rehearsal-script.md` 由脚本从它生成，避免各份文档漂移。
 
 ## 稳定 ID
 
 - 证据：`E001`、`E002`；
+- 素材：`A001`、`A002`；
 - 大纲章节：`O01`、`O02`；
 - 讲述单元：`B001`、`B002`；
 - 页面：`S001`、`S002`。
@@ -45,12 +46,15 @@ python scripts/render_pipeline_docs.py report-spec.json --outdir .
 
 ## 阶段三：页面脚本
 
+先完成 `assets` 与 `template`：关键素材记录来源、证据、几何形态与处理方式；模板记录继承等级、profile 和代表页计划。再由 `slides` 把讲述单元映射为页面。
+
 `slides` 把讲述单元映射为页面。每页记录：
 
 - 页面编号、角色、标题和所属章节；
-- `beat_refs` 与 `evidence_refs`；
+- `beat_refs`、`evidence_refs` 与 `asset_refs`；
 - 屏幕文字、候选视觉和来源；
-- `template_layout`；
+- 图表任务和听众应看到的关键发现；
+- `template_layout`、布局理由和风险；
 - 预计讲述时间。
 
 除封面、目录、章节页、参考文献和纯结束页外，页面必须引用讲述单元。讲述单元使用的证据必须出现在对应页面的证据引用中。所有 `core` 讲述单元必须至少进入一页。
@@ -62,11 +66,24 @@ python scripts/render_pipeline_docs.py report-spec.json --outdir .
 
 校验通过后，`slide-plan.md` 才能作为 PPTX 制作输入。
 
+页面计划阶段允许代表页状态为 `pending`，但必须产生警告。
+
+## 阶段四：最终交付
+
+代表页确认和全稿修订完成后，为每页写入 `speaker_notes`，必要时补充 `advance_cue`。逐页文稿来自已确认讲述单元，但可按最终页面重新组织措辞；不得增加新的学术主张。
+
+```text
+python scripts/validate_pipeline.py report-spec.json --stage delivery --strict
+python scripts/render_pipeline_docs.py report-spec.json --outdir .
+```
+
+`delivery` 阶段要求：代表页关卡已通过或明确不需要、所有页面都有排练文稿、素材高清风险已解决、页面总时间不超预算。校验通过后，`rehearsal-script.md` 与最终 PPTX 成套交付。
+
 ## 最小结构
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "scenario": "thesis-defense",
   "stance": "author",
   "language": "zh-CN",
@@ -81,6 +98,34 @@ python scripts/render_pipeline_docs.py report-spec.json --outdir .
       "boundary": "不能据此推出的内容"
     }
   ],
+  "assets": [
+    {
+      "id": "A001",
+      "source": "thesis.pdf · Figure 1",
+      "geometry": "wide",
+      "handling": "preserve",
+      "evidence_refs": ["E001"]
+    }
+  ],
+  "template": {
+    "provided": true,
+    "source": "official-template.pptx",
+    "adherence": "strict",
+    "profile": {
+      "canvas": "16:9",
+      "safe_margins": "沿用模板安全区",
+      "theme_fonts": "沿用模板主题字体",
+      "colors": "沿用机构色和语义色",
+      "page_families": ["cover", "evidence", "conclusion"],
+      "navigation_footer": "沿用原导航和页脚",
+      "risks": []
+    },
+    "representative_review": {
+      "required": true,
+      "status": "approved",
+      "slide_refs": ["S001", "S002"]
+    }
+  },
   "outline": [
     {
       "id": "O01",
@@ -114,10 +159,14 @@ python scripts/render_pipeline_docs.py report-spec.json --outdir .
       "section_id": null,
       "beat_refs": [],
       "evidence_refs": [],
+      "asset_refs": [],
       "on_screen": ["张三", "某大学某学院"],
       "visuals": [],
       "template_layout": "cover-01",
-      "estimated_seconds": 15
+      "layout_rationale": "使用官方封面家族",
+      "layout_risk": "无",
+      "estimated_seconds": 15,
+      "speaker_notes": "各位老师好，下面开始汇报。"
     },
     {
       "id": "S002",
@@ -127,10 +176,17 @@ python scripts/render_pipeline_docs.py report-spec.json --outdir .
       "section_id": "O01",
       "beat_refs": ["B001"],
       "evidence_refs": ["E001"],
+      "asset_refs": ["A001"],
+      "exhibit_purpose": "用原论文图支持研究缺口",
+      "key_finding": "现有方法在目标条件下仍有缺口",
       "on_screen": ["一句核心结论"],
       "visuals": ["论文 Figure 1"],
       "template_layout": "figure-right-01",
-      "estimated_seconds": 45
+      "layout_rationale": "横向原图需要较宽证据区",
+      "layout_risk": "图例可能过小",
+      "estimated_seconds": 45,
+      "speaker_notes": "请看这张图，关键限制出现在目标条件下。",
+      "advance_cue": "指出高亮区域后切页"
     }
   ]
 }

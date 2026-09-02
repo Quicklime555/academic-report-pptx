@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render readable outline, talk manuscript, and slide plan from report-spec.json."""
+"""Render readable outline, manuscript, slide plan, and rehearsal script."""
 
 from __future__ import annotations
 
@@ -116,10 +116,44 @@ def render_slide_plan(data: dict[str, Any]) -> str:
                 f"- 章节：{item.get('section_id', '')}",
                 f"- 讲述单元：{', '.join(str(x) for x in item.get('beat_refs', [])) or '无'}",
                 f"- 证据：{', '.join(str(x) for x in item.get('evidence_refs', [])) or '无'}",
+                f"- 素材：{', '.join(str(x) for x in item.get('asset_refs', [])) or '无'}",
                 f"- 模板布局：{item.get('template_layout', '')}",
+                f"- 布局理由：{item.get('layout_rationale', '')}",
+                f"- 布局风险：{item.get('layout_risk', '')}",
+                f"- 图表任务：{item.get('exhibit_purpose', '') or '无'}",
+                f"- 关键发现：{item.get('key_finding', '') or '无'}",
                 f"- 时间：{item.get('estimated_seconds', '')} 秒",
                 f"- 屏幕文字：{'｜'.join(str(x) for x in item.get('on_screen', [])) or '无'}",
                 f"- 视觉：{'｜'.join(str(x) for x in item.get('visuals', [])) or '无'}",
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_rehearsal_script(data: dict[str, Any]) -> str:
+    lines = [
+        "# 最终排练稿",
+        "",
+        f"- 汇报场景：{data.get('scenario', '')}",
+        f"- 可用讲述时间：{float(data.get('duration_minutes', 0) - data.get('qa_minutes', 0)):g} 分钟",
+        "",
+    ]
+    slides = sorted(
+        (item for item in data.get("slides", []) if isinstance(item, dict)),
+        key=lambda item: int(item.get("number", 0)),
+    )
+    for item in slides:
+        lines.extend(
+            [
+                f"## Slide {item.get('number', '')}｜{item.get('title', '')}",
+                "",
+                f"- 时间：{item.get('estimated_seconds', '')} 秒",
+                f"- 对应讲述单元：{', '.join(str(x) for x in item.get('beat_refs', [])) or '无'}",
+                f"- 视觉关注点：{item.get('key_finding', '') or '无'}",
+                f"- 切页提示：{item.get('advance_cue', '') or '讲完本页后自然切换'}",
+                "",
+                str(item.get("speaker_notes", "")),
                 "",
             ]
         )
@@ -142,6 +176,7 @@ def main() -> int:
         "content-outline.md": render_outline(data),
         "talk-manuscript.md": render_manuscript(data),
         "slide-plan.md": render_slide_plan(data),
+        "rehearsal-script.md": render_rehearsal_script(data),
     }
     for name, content in outputs.items():
         (outdir / name).write_text(content, encoding="utf-8")
