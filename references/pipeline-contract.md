@@ -21,7 +21,7 @@ python scripts/validate_pipeline.py report-spec.json --stage outline --strict
 python scripts/render_pipeline_docs.py report-spec.json --outdir .
 ```
 
-向用户展示 `content-outline.md`，确认后才进入文稿阶段。
+新策划的大纲向用户展示并确认后进入文稿阶段。用户已提供明确且确认的大纲时，复用其内容并补齐映射，不重复索取相同确认。
 
 ## 阶段二：汇报文稿
 
@@ -42,7 +42,7 @@ python scripts/validate_pipeline.py report-spec.json --stage manuscript --strict
 python scripts/render_pipeline_docs.py report-spec.json --outdir .
 ```
 
-向用户展示 `talk-manuscript.md`，确认后才进入页面阶段。
+新写或实质改写的母稿向用户展示并确认后进入页面阶段。已有明确确认的讲稿可直接进入分页；只修改现有 PPT 时保留未变内容，仅同步受影响的页面与讲稿，不以重写母稿作为修改前提。
 
 ## 阶段三：页面脚本
 

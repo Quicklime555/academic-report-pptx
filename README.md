@@ -12,6 +12,14 @@
 
 ## 立即使用
 
+把下面这句话交给支持 Skills 的 Agent：
+
+```text
+请帮我安装这个 Skill：https://github.com/Quicklime555/academic-report-pptx
+```
+
+也可以使用 Skills CLI（此安装方式需要 Node.js）：
+
 ```text
 npx skills add Quicklime555/academic-report-pptx
 ```
@@ -70,6 +78,8 @@ Skill 会优先提取用户模板的母版、页面家族、导航、网格和�
 ```
 
 确认节点只放在会显著改变后续结果的位置。已经确认的叙事不会在视觉制作阶段被静默改写；如果证据、时长或模板条件变化，流程会回到相应阶段重新校验。
+
+已有确认的大纲或讲稿时，从相应阶段继续；仅修改现有 PPT 时，保留内容与顺序并检查受影响页面。综述报告以用户主材料为线索，参考论文用于核查；逐篇精读则为方法和实验解读分配更多时间。图表数量、标题方式和内容深度随本次目标调整。
 
 ## 更多使用方式
 
@@ -131,7 +141,11 @@ python scripts/validate_pipeline.py <report-spec.json> --stage delivery --strict
 python -m unittest discover -s tests -v
 ```
 
-效果评测样例位于 `evals/evals.json`。当前版本已通过仓库单元测试与严格静态校验，但仍以作者自测为主；尚未完成隔离执行者测试和用户盲评，因此不把静态通过等同于审美效果证明。
+效果评测样例位于 `evals/evals.json`，覆盖短综述、逐篇精读、已有讲稿分页和局部视觉修改等场景。已有外部使用反馈用于调整规则；当前版本已通过仓库单元测试与严格静态校验，但新增场景尚未完成独立生成验证和用户盲评，因此不把静态通过等同于审美效果证明。
+
+## 参与改进
+
+欢迎通过 [Issues](https://github.com/Quicklime555/academic-report-pptx/issues) 提交使用反馈。最有价值的是汇报目标、Agent 的理解、生成结果与实际采用版本之间的差异。请使用匿名化或可公开材料，具体要求见 [贡献指南](./.github/CONTRIBUTING.md)。安全与隐私问题见 [安全说明](./.github/SECURITY.md)。
 
 ## License
 
